@@ -1,5 +1,5 @@
-import { ChangeEvent, useState } from "react";
-import { LocationData } from "../types/types";
+import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import { ForecastType, LocationData } from "../types/types";
 import { useFetchAddress } from "../hooks/useFetchAddress";
 import { useFetchWeather } from "../hooks/useFetchWeather";
 import { ForecastDisplay } from "./ForecastDisplay";
@@ -10,6 +10,7 @@ import { Loading } from "./Loading";
 export const Weather = () => {
   const [location, setLocation] = useState('')
   const [isOpen, setIsOpen] = useState(false);
+  const [forecast, setForecast] = useState<ForecastType[]>([]);
 
   const {
     suggestedAddress,
@@ -50,7 +51,24 @@ export const Weather = () => {
     setSuggestedAddress([])
   }
 
-  const forecast = generateFiveDaysForecast(weatherPrediction);
+  const handleClose = useCallback(() => {
+    setIsOpen(false)
+  }, [])
+
+  const handleFocus = useCallback(() => {
+    if (location.trim()) {
+      setIsOpen(true);
+    }
+  }, [location])
+
+  useEffect(() => {
+    if (weatherPrediction) {
+      const newForecast = generateFiveDaysForecast(weatherPrediction);
+      setForecast(newForecast);
+    } else {
+      setForecast([]);
+    }
+  }, [weatherPrediction]);
 
   return (
     <div className="relative w-1/2 m-auto">
@@ -58,16 +76,20 @@ export const Weather = () => {
         placeholder="Weather in your city/place ..."
         value={location}
         className="w-full mt-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 p-5"
-        onChange={handleInputChange} />
+        onChange={handleInputChange}
+        onFocus={handleFocus}
+      />
       {addressError && <p>{addressError}</p>}
       {weatherError && <p>{weatherError}</p>}
       {isLoading && <Loading />}
       {isOpen && suggestedAddress.length > 0 &&
         <SuggestedAddressList
           suggestedAddress={suggestedAddress}
-          selectedAddressHandler={selectedAddressHandler} />
+          selectedAddressHandler={selectedAddressHandler}
+          onClose={handleClose}
+        />
       }
-      {forecast && (
+      {forecast && forecast.length > 0 && (
         <ForecastDisplay forecast={forecast} />
       )}
     </div>
