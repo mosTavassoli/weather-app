@@ -17,10 +17,6 @@ export type WeatherLocationType = {
   longitude: number;
 };
 
-export type LocationQueryParam = {
-  location: string;
-};
-
 export type WeatherForecast = {
   cod: string;
   message: number;

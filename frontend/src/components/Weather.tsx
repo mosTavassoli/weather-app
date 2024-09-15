@@ -1,9 +1,11 @@
 import { ChangeEvent, useState } from "react";
-import { LocationData, ForecastType } from "../types/types";
+import { LocationData } from "../types/types";
 import { useFetchAddress } from "../hooks/useFetchAddress";
 import { useFetchWeather } from "../hooks/useFetchWeather";
 import { ForecastDisplay } from "./ForecastDisplay";
 import { SuggestedAddressList } from "./SuggestedAddressList";
+import { generateFiveDaysForecast } from "../utils/generateFiveDaysForecast";
+import { Loading } from "./Loading";
 
 export const Weather = () => {
   const [location, setLocation] = useState('')
@@ -48,40 +50,7 @@ export const Weather = () => {
     setSuggestedAddress([])
   }
 
-  const generateFiveDaysForecast = () => {
-
-    if (weatherPrediction) {
-      const { list } = weatherPrediction;
-      const forecastMap = new Map<string, ForecastType>();
-
-      list.forEach((item) => {
-        const date = item.dt_txt.split(' ')[0] as string;
-        const existingForecast = forecastMap.get(date) as ForecastType;
-
-        if (!existingForecast) {
-          const weatherItem = item.weather[0];
-          if (!weatherItem || typeof weatherItem.description !== 'string' || typeof weatherItem.icon !== 'string') {
-            return;
-          }
-          forecastMap.set(date, {
-            date,
-            temp: item.main.temp,
-            temp_min: item.main.temp_min,
-            temp_max: item.main.temp_max,
-            description: weatherItem.description,
-            iconUrl: `${process.env.REACT_APP_ICON_URL}/${weatherItem.icon}.png`
-          });
-        } else {
-          existingForecast.temp_min = Math.min(existingForecast.temp_min, item.main.temp_min);
-          existingForecast.temp_max = Math.max(existingForecast.temp_max, item.main.temp_max);
-        }
-      });
-
-      return Array.from(forecastMap.values());
-    }
-    return [];
-  };
-  const forecast = generateFiveDaysForecast();
+  const forecast = generateFiveDaysForecast(weatherPrediction);
 
   return (
     <div className="relative w-1/2 m-auto">
@@ -92,11 +61,7 @@ export const Weather = () => {
         onChange={handleInputChange} />
       {addressError && <p>{addressError}</p>}
       {weatherError && <p>{weatherError}</p>}
-      {isLoading &&
-        <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-        </div>
-      }
+      {isLoading && <Loading />}
       {isOpen && suggestedAddress.length > 0 &&
         <SuggestedAddressList
           suggestedAddress={suggestedAddress}
