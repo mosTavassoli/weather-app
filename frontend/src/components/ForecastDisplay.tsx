@@ -3,18 +3,21 @@ import { WeatherCard } from './WeatherCard';
 import { ForecastType } from "../types/types";
 
 interface ForecastDisplayProps {
-  forecast: ForecastType[] | null;
+  forecast: ForecastType[];
 }
 
 export const ForecastDisplay: React.FC<ForecastDisplayProps> = ({ forecast }) => {
-  if (!forecast || forecast.length === 0) {
+  const todayForecast = forecast[0];
+  const lastDayForecast = forecast[forecast.length - 1];
+
+  if (!todayForecast || !lastDayForecast) {
     return null;
   }
 
   return (
     <div className="w-full flex flex-col md:flex-row mt-5">
       <div className="w-full md:w-1/2 mb-4 md:mb-0">
-        <WeatherCard forecast={forecast[0]} isToday />
+        <WeatherCard forecast={todayForecast} isToday />
       </div>
       <div className="w-full md:w-1/2">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -24,7 +27,7 @@ export const ForecastDisplay: React.FC<ForecastDisplayProps> = ({ forecast }) =>
         </div>
         <div className="mt-2 flex justify-center">
           <div className="w-full sm:w-1/2">
-            <WeatherCard forecast={forecast[forecast.length - 1]} />
+            <WeatherCard forecast={lastDayForecast} />
           </div>
         </div>
       </div>
