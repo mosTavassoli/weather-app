@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_WEATHER_URL=${REACT_APP_WEATHER_URL}
+      - REACT_APP_ICON_URL=${REACT_APP_ICON_URL}
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    environment:
+      - PORT=${BACKEND_PORT}
+      - WEATHER_API_KEY=${WEATHER_API_KEY}
+      - WEATHER_URL=${WEATHER_URL}
+      - MAPBOX_API_KEY=${MAPBOX_API_KEY}
+      - MAPBOX_URL=${MAPBOX_URL}
