@@ -2,7 +2,8 @@ import { ChangeEvent, useState } from "react";
 import { LocationData, ForecastType } from "../types/types";
 import { useFetchAddress } from "../hooks/useFetchAddress";
 import { useFetchWeather } from "../hooks/useFetchWeather";
-import { WeatherCard } from "./WeatherCard";
+import { ForecastDisplay } from "./ForecastDisplay";
+import { SuggestedAddressList } from "./SuggestedAddressList";
 
 export const Weather = () => {
   const [location, setLocation] = useState('')
@@ -49,23 +50,33 @@ export const Weather = () => {
 
   const generateFiveDaysForecast = () => {
     if (weatherPrediction) {
-      const { list } = weatherPrediction
-      return list.reduce((acc: ForecastType[], curr) => {
-        const date = curr.dt_txt.split(' ')[0]
-        if (!acc.find((forecast) => forecast.date === date)) {
-          acc.push({
-            date,
-            temp: curr.main.temp,
-            description: curr.weather[0].description,
-            iconUrl: `${process.env.REACT_APP_ICON_URL}/${curr.weather[0].icon}.png`
-          });
-        }
-        return acc
-      }, [])
-    }
-  }
-  const forecast = generateFiveDaysForecast();
+      const { list } = weatherPrediction;
+      const forecastMap = new Map<string, ForecastType>();
 
+      list.forEach((item) => {
+        const date = item.dt_txt.split(' ')[0];
+        const existingForecast = forecastMap.get(date);
+
+        if (!existingForecast) {
+          forecastMap.set(date, {
+            date,
+            temp: item.main.temp,
+            temp_min: item.main.temp_min,
+            temp_max: item.main.temp_max,
+            description: item.weather[0].description,
+            iconUrl: `${process.env.REACT_APP_ICON_URL}/${item.weather[0].icon}.png`
+          });
+        } else {
+          existingForecast.temp_min = Math.min(existingForecast.temp_min, item.main.temp_min);
+          existingForecast.temp_max = Math.max(existingForecast.temp_max, item.main.temp_max);
+        }
+      });
+
+      return Array.from(forecastMap.values());
+    }
+    return [];
+  };
+  const forecast = generateFiveDaysForecast();
 
   return (
     <div className="relative w-1/2 m-auto">
@@ -74,43 +85,20 @@ export const Weather = () => {
         value={location}
         className="w-full mt-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 p-5"
         onChange={handleInputChange} />
-      {addressError &&
-        <p>{addressError}</p>
-      }
-      {weatherError &&
-        <p>{weatherError}</p>
-      }
+      {addressError && <p>{addressError}</p>}
+      {weatherError && <p>{weatherError}</p>}
       {isLoading &&
         <div className="flex justify-center items-center">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
         </div>
       }
       {isOpen && suggestedAddress.length > 0 &&
-        <ul className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto ">
-          {suggestedAddress.map((address: any) =>
-            <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer" key={address.extra.id}
-              onClick={() => selectedAddressHandler(address)}>{address.formattedAddress}</li>
-          )}
-        </ul>
+        <SuggestedAddressList
+          suggestedAddress={suggestedAddress}
+          selectedAddressHandler={selectedAddressHandler} />
       }
       {forecast && (
-        <div className="w-full flex flex-col md:flex-row mt-5 gap-2">
-          <div className="w-full md:w-1/2 mb-4 md:mb-0">
-            <WeatherCard forecast={forecast[0]} isToday />
-          </div>
-          <div className="w-full md:w-1/2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {forecast.slice(1, -1).map((day) => (
-                <WeatherCard key={day.date} forecast={day} />
-              ))}
-            </div>
-            <div className="mt-2 flex justify-center">
-              <div className="w-full sm:w-1/2">
-                <WeatherCard forecast={forecast[forecast.length - 1]} />
-              </div>
-            </div>
-          </div>
-        </div>
+        <ForecastDisplay forecast={forecast} />
       )}
     </div>
   )

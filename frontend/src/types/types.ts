@@ -61,4 +61,6 @@ export type ForecastType = {
   temp: number;
   description: string;
   iconUrl: string;
+  temp_min: number;
+  temp_max: number;
 };
